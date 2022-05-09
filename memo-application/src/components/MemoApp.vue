@@ -8,6 +8,9 @@
         :memo="memo"
         @deleteMemo="deleteMemo"
         @updateMemo="updateMemo"
+        :editingId="editingId"
+        @setEditingId="SET_EDITING_ID"
+        @resetEditingId="RESET_EDITING_ID"
       />
     </ul>
   </div>
@@ -16,6 +19,8 @@
 import axios from "axios";
 import MemoForm from "./MemoForm.vue";
 import Memo from "./Memo.vue";
+import { mapActions, mapState, mapMutations } from "vuex";
+import { RESET_EDITING_ID, SET_EDITING_ID } from "../store/mutations-types";
 
 const memoAPICore = axios.create({
   baseURL: "http://localhost:8000/api/memos",
@@ -24,17 +29,6 @@ const memoAPICore = axios.create({
 export default {
   name: "MemoApp",
   methods: {
-    addMemo(payload) {
-      memoAPICore.post("/", payload).then((res) => {
-        this.memos.push(payload);
-      });
-    },
-    deleteMemo(id) {
-      const targetIndex = this.memos.findIndex((v) => v.id === id);
-      memoAPICore.delete(`/${id}`).then(() => {
-        this.memos.splice(targetIndex, 1);
-      });
-    },
     updateMemo(payload) {
       const { id, content } = payload;
       const targetIndex = this.memos.findIndex((v) => v.id === id);
@@ -43,20 +37,18 @@ export default {
         this.memos.splice(targetIndex, 1, { ...targetMemo, content });
       });
     },
+    ...mapActions(["fetchMemos", "addMemo", "deleteMemo", "updateMemo"]),
+    ...mapMutations([SET_EDITING_ID, RESET_EDITING_ID]),
   },
-  data() {
-    return {
-      memos: [],
-    };
+  computed: {
+    ...mapState(["memos", "editingId"]),
   },
   components: {
     MemoForm,
     Memo,
   },
   created() {
-    memoAPICore.get("/").then((res) => {
-      this.memos = res.data;
-    });
+    this.fetchMemos();
   },
 };
 </script>
